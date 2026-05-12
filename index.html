@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>人间草木 - 汪曾祺</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink-dark: #1a1a1a;
+            --ink-mid: #4a4a4a;
+            --ink-light: #888;
+            --paper: #f7f5f0;
+            --paper-warm: #f0ece3;
+            --accent: #6b4c3a;
+            --accent-light: #a08060;
+            --border: #d5cec3;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', 'SimSun', serif;
+            background: var(--paper);
+            color: var(--ink-dark);
+            line-height: 1.9;
+            overflow-x: hidden;
+        }
+
+        /* 宣纸纹理背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* 水墨粒子画布 */
+        #ink-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            opacity: 0.6;
+        }
+
+        /* ===== 加载动画 ===== */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--paper);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 1.2s ease, visibility 1.2s;
+        }
+        .loader.hidden { opacity: 0; visibility: hidden; }
+        .loader-ink {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, var(--ink-dark) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: inkDrop 2s ease-in-out infinite;
+            filter: blur(8px);
+        }
+        @keyframes inkDrop {
+            0% { transform: scale(0.5); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        .loader-text {
+            margin-top: 2rem;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.5rem;
+            color: var(--ink-mid);
+            letter-spacing: 0.5em;
+        }
+
+        /* ===== 封面 ===== */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background: url('img4.png') center/cover no-repeat;
+            filter: grayscale(40%) brightness(0.9) contrast(1.1);
+            opacity: 0.35;
+            transition: transform 8s ease;
+        }
+        .hero:hover .hero-bg { transform: scale(1.05); }
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(247,245,240,0.3) 0%, rgba(247,245,240,0.7) 60%, var(--paper) 100%);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+        }
+        .hero-seal {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 2rem;
+            border: 3px solid #a03030;
+            color: #a03030;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(-5deg);
+            opacity: 0.85;
+        }
+        .hero-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: clamp(4rem, 14vw, 7rem);
+            color: var(--ink-dark);
+            letter-spacing: 0.25em;
+            text-indent: 0.25em;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            text-shadow: 4px 4px 12px rgba(0,0,0,0.08);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: brushIn 1.5s ease forwards 0.5s;
+        }
+        .hero-author {
+            font-family: 'ZCOOL XiaoWei', serif;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            color: var(--ink-mid);
+            letter-spacing: 0.8em;
+            text-indent: 0.8em;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 1s;
+        }
+        .hero-quote {
+            max-width: 520px;
+            margin: 0 auto;
+            font-size: 1.05rem;
+            color: var(--ink-mid);
+            line-height: 2.2;
+            padding: 1.5rem 2rem;
+            border-left: 3px solid var(--accent-light);
+            border-right: 3px solid var(--accent-light);
+            background: rgba(255,255,255,0.4);
+            opacity: 0;
+            animation: fadeIn 1.5s ease forwards 1.3s;
+        }
+        .scroll-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--ink-light);
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 2s, float 2s ease-in-out infinite 2.5s;
+        }
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--ink-light), transparent);
+        }
+        @keyframes brushIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ===== 通用容器 ===== */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===== 卷轴装饰 ===== */
+        .scroll-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 3rem 0;
+            opacity: 0.4;
+        }
+        .scroll-divider::before, .scroll-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--ink-mid), transparent);
+        }
+        .scroll-divider span {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.2rem;
+            color: var(--ink-mid);
+        }
+
+        /* ===== 简介 ===== */
+        .intro-section {
+            padding: 2rem 0 4rem;
+        }
+        .intro-card {
+            background: rgba(255,255,255,0.6);
+            border: 1px solid var(--border);
+            padding: 3rem;
+            position: relative;
+        }
+        .intro-card::before, .intro-card::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-light);
+        }
+        .intro-card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .intro-card::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .intro-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--ink-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .intro-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--border), transparent);
+        }
+        .intro-text {
+            text-indent: 2em;
+            color: var(--ink-mid);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        .intro-img {
+            width: 100%;
+            max-width: 500px;
+            margin: 2rem auto;
+            display: block;
+            filter: grayscale(20%) contrast(0.95);
+            border: 8px solid white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: filter 0.5s ease;
+        }
+        .intro-img:hover { filter: grayscale(0%) contrast(1); }
+
+        /* ===== 章节 ===== */
+        .chapter {
+            margin-bottom: 4rem;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .chapter.visible { opacity: 1; transform: translateY(0); }
+        .chapter-header {
+            display: flex;
+            align-items: flex-end;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .chapter-num {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 3.5rem;
+            color: var(--accent-light);
+            line-height: 1;
+            opacity: 0.5;
+        }
+        .chapter-info h3 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.8rem;
+            color: var(--ink-dark);
+            margin-bottom: 0.3rem;
+        }
+        .chapter-info p {
+            color: var(--ink-light);
+            font-size: 0.95rem;
+            letter-spacing: 0.1em;
+        }
+        .chapter-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .chapter-layout { grid-template-columns: 1fr; }
+        }
+        .chapter-img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            filter: grayscale(25%) sepia(10%);
+            border: 6px solid white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+        .chapter-img:hover {
+            filter: grayscale(0%) sepia(0%);
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .articles { display: flex; flex-direction: column; gap: 1rem; }
+        .article-card {
+            background: rgba(255,255,255,0.5);
+            border-left: 3px solid transparent;
+            padding: 1.2rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .article-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(to right, rgba(107,76,58,0.06), transparent);
+            transition: width 0.4s ease;
+        }
+        .article-card:hover::before { width: 100%; }
+        .article-card:hover {
+            border-left-color: var(--accent);
+            background: rgba(255,255,255,0.8);
+            transform: translateX(5px);
+        }
+        .article-card.active { border-left-color: var(--accent); background: white; }
+        .article-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.4rem;
+            color: var(--ink-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .article-excerpt {
+            font-size: 0.92rem;
+            color: var(--ink-mid);
+            line-height: 1.8;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        .article-card.active .article-excerpt {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+        .article-quote {
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: rgba(107,76,58,0.05);
+            border-radius: 4px;
+            font-style: italic;
+            color: var(--accent);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            position: relative;
+            display: none;
+        }
+        .article-card.active .article-quote { display: block; animation: fadeIn 0.5s ease; }
+        .article-quote::before {
+            content: '「';
+            font-size: 1.5rem;
+            color: var(--accent-light);
+            margin-right: 0.2rem;
+        }
+        .article-quote::after {
+            content: '」';
+            font-size: 1.5rem;
+            color: var(--accent-light);
+            margin-left: 0.2rem;
+        }
+
+        /* ===== 阅读心得 ===== */
+        .insights-section {
+            padding: 4rem 0;
+        }
+        .section-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--ink-dark);
+            position: relative;
+        }
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 2px;
+            background: var(--accent-light);
+            margin: 0.8rem auto 0;
+        }
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .insights-grid { grid-template-columns: 1fr; }
+        }
+        .insight-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border: 1px solid var(--border);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            transform-style: preserve-3d;
+        }
+        .insight-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            border-color: var(--accent-light);
+        }
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--accent), var(--accent-light), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .insight-card:hover::before { opacity: 1; }
+        .insight-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+            text-align: center;
+        }
+        .insight-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--ink-dark);
+        }
+        .insight-text {
+            font-size: 0.95rem;
+            color: var(--ink-mid);
+            line-height: 1.9;
+            text-align: justify;
+        }
+        .insight-detail {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border);
+            font-size: 0.88rem;
+            color: var(--ink-light);
+            display: none;
+        }
+        .insight-card.expanded .insight-detail { display: block; animation: fadeIn 0.4s ease; }
+
+        /* ===== 水墨画廊 ===== */
+        .gallery-section {
+            padding: 4rem 0;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .gallery { grid-template-columns: repeat(2, 1fr); }
+        }
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+        .gallery-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            filter: grayscale(30%) contrast(0.95);
+            transition: all 0.5s ease;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.08);
+            filter: grayscale(0%) contrast(1);
+        }
+        .gallery-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            color: white;
+            font-size: 0.85rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover .gallery-caption { transform: translateY(0); }
+
+        /* ===== 灯箱 ===== */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(247,245,240,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            padding: 2rem;
+        }
+        .lightbox.active { opacity: 1; visibility: visible; }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 85vh;
+            object-fit: contain;
+            border: 8px solid white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transform: scale(0.9);
+            transition: transform 0.4s ease;
+        }
+        .lightbox.active img { transform: scale(1); }
+        .lightbox-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2.5rem;
+            color: var(--ink-mid);
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.3s;
+        }
+        .lightbox-close:hover { background: var(--ink-dark); color: white; }
+
+        /* ===== 互动翻书 ===== */
+        .book-section {
+            padding: 4rem 0;
+            text-align: center;
+        }
+        .book-section > p { color: var(--ink-light); margin-bottom: 2rem; }
+        .book-wrap {
+            display: inline-flex;
+            gap: 2rem;
+            perspective: 1200px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .book-item {
+            width: 160px;
+            height: 220px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+        }
+        .book-item:hover { transform: rotateY(-15deg) translateY(-10px); }
+        .book-spine {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 100%;
+            background: linear-gradient(to right, #4a3528, #6b4c3a);
+            transform: translateX(-12px) rotateY(-90deg);
+            transform-origin: right;
+        }
+        .book-front {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #5c4033 0%, #3e2b22 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #f0ece3;
+            font-family: 'Ma Shan Zheng', cursive;
+            box-shadow: 4px 4px 15px rgba(0,0,0,0.2);
+            border-left: 4px solid rgba(0,0,0,0.2);
+            padding: 1rem;
+        }
+        .book-front h4 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.3em;
+        }
+        .book-front small {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            writing-mode: vertical-rl;
+        }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            text-align: center;
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+        .footer-ink {
+            width: 100px;
+            height: 40px;
+            margin: 0 auto 1.5rem;
+            background: radial-gradient(ellipse at center, var(--ink-light) 0%, transparent 70%);
+            opacity: 0.3;
+            filter: blur(4px);
+        }
+        .footer-quote {
+            font-size: 1.1rem;
+            color: var(--ink-mid);
+            max-width: 500px;
+            margin: 0 auto 1rem;
+            line-height: 2.2;
+            font-style: italic;
+        }
+        .footer-author {
+            color: var(--ink-light);
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
+        }
+
+        /* 顶部导航 */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 9999;
+            background: linear-gradient(to bottom, rgba(247,245,240,0.9), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+        }
+        .nav.visible { opacity: 1; pointer-events: all; }
+        .nav-logo {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.3rem;
+            color: var(--ink-dark);
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .nav-links a {
+            color: var(--ink-mid);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+        .nav-links a:hover { color: var(--accent); }
+        .nav-links a:hover::after { width: 100%; }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loader" id="loader">
+        <div class="loader-ink"></div>
+        <div class="loader-text">水墨晕染中</div>
+    </div>
+
+    <!-- 水墨粒子画布 -->
+    <canvas id="ink-canvas"></canvas>
+
+    <!-- 导航 -->
+    <nav class="nav" id="nav">
+        <div class="nav-logo">人间草木</div>
+        <div class="nav-links">
+            <a href="#intro">卷首</a>
+            <a href="#chapters">章节</a>
+            <a href="#insights">心得</a>
+            <a href="#gallery">画境</a>
+        </div>
+    </nav>
+
+    <!-- 灯箱 -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-close" onclick="event.stopPropagation(); closeLightbox()">×</div>
+        <img src="" alt="水墨画" id="lightbox-img">
+    </div>
+
+    <!-- 封面 -->
+    <header class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="hero-seal">草木</div>
+            <h1 class="hero-title">人间草木</h1>
+            <p class="hero-author">汪曾祺</p>
+            <div class="hero-quote">
+                我念的经，只有四个字：「人生苦短」。<br>
+                因为这苦和短，我马不停蹄，一意孤行。
+            </div>
+        </div>
+        <div class="scroll-hint">
+            <span>向下展开</span>
+            <div class="scroll-line"></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 卷轴分隔 -->
+        <div class="scroll-divider"><span>卷首</span></div>
+
+        <!-- 简介 -->
+        <section class="intro-section" id="intro">
+            <div class="intro-card">
+                <h2 class="intro-title">关于本书</h2>
+                <p class="intro-text">《人间草木》是汪曾祺先生的散文集，收录了他关于花草虫鱼、地方风物、美食滋味的随笔文字。这些文章写于不同时期，却都贯穿着同一种生活态度——对寻常事物的深情凝视。</p>
+                <p class="intro-text">汪曾祺的文字平淡质朴，如话家常，却处处透露出对生活的热爱。他写高邮的鸭蛋、昆明的菌子、葡萄的月令、西南联大的师友，皆是日常所见，却能在平凡中见出趣味，于细微处悟得真谛。</p>
+                <img src="img2.png" alt="文人书斋" class="intro-img" onclick="openLightbox(this.src)">
+                <p class="intro-text">读他的散文，如品一壶好茶，清淡却回味悠长。他用笔告诉世人：生活是很有意思的，大自然中的一草一木都值得被珍视，一饮一食中都藏着生命的滋味。</p>
+            </div>
+        </section>
+
+        <div class="scroll-divider"><span>章回</span></div>
+
+        <!-- 章节内容 -->
+        <section id="chapters">
+            <!-- 一果一蔬 -->
+            <article class="chapter">
+                <div class="chapter-header">
+                    <span class="chapter-num">壹</span>
+                    <div class="chapter-info">
+                        <h3>一果一蔬</h3>
+                        <p>人间滋味，尽在这五味杂陈之中</p>
+                    </div>
+                </div>
+                <div class="chapter-layout">
+                    <img src="img5.png" alt="草木花果" class="chapter-img" onclick="openLightbox(this.src)">
+                    <div class="articles">
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">端午的鸭蛋</div>
+                            <div class="article-excerpt">家乡的端午，很多风俗与外地一样。系百索子、做香角子、贴五毒、贴符、喝雄黄酒、放黄烟子、吃「十二红」。除此之外，还有一个特色——挂「鸭蛋络子」。</div>
+                            <div class="article-quote">筷子头一扎下去，吱——红油就冒出来了。高邮咸蛋的黄是通红的。苏北有一道名菜，叫做「朱砂豆腐」，其实就是高邮鸭蛋做的。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">菌小谱</div>
+                            <div class="article-excerpt">昆明菌子极多。雨季逛菜市场，随时可以看到各种菌子。最多，也最便宜的是牛肝菌。牛肝菌下来的时候，家家饭馆卖炒牛肝菌。</div>
+                            <div class="article-quote">鸡枞是菌中之王。味道之鲜、之美，可以说是在一切食用菌之上。昆明人过去贵备人爱出风头、不甘寂寞，说他是「鸡枞」——鸡枞菌盖开展时，中心凸起，确实有点风头。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">故乡的食物</div>
+                            <div class="article-excerpt">小时读《诗经·大雅·緜》：「周原膴膴，堇荼如饴」，觉得堇和荼都是苦的，怎么会如饴呢？后来到北方，才知道堇和荼并非一物。</div>
+                            <div class="article-quote">一个人的口味，最好是幼年时养成的。幼年时的口味，往往会影响一生。我对豆腐就有这样的感情。</div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 草木虫鱼 -->
+            <article class="chapter">
+                <div class="chapter-header">
+                    <span class="chapter-num">贰</span>
+                    <div class="chapter-info">
+                        <h3>草木虫鱼</h3>
+                        <p>万物有灵，生命各有各的可爱</p>
+                    </div>
+                </div>
+                <div class="chapter-layout">
+                    <div class="articles">
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">葡萄月令</div>
+                            <div class="article-excerpt">一月，下大雪。雪静静地下着。果园一片白。听不到一点声音。葡萄睡在铺着白雪的窖里。二月里刮春风。立春后，要刮四十八天「摆条风」。</div>
+                            <div class="article-quote">葡萄的卷须，在微微有一点甜味的时候，是非常好吃的，嫩嫩的。葡萄装上车，走了。去吧，葡萄，让人们吃去吧！</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">夏天的昆虫</div>
+                            <div class="article-excerpt">蝈蝈我们那里叫做「叫蚰子」。因为它长得粗壮结实，样子也不大好看，还特别在前面加一个「侉」字，叫做「侉叫蚰子」。</div>
+                            <div class="article-quote">或问：你写这些昆虫什么意思？答曰：我只是希望现在的孩子也能玩玩这些昆虫，对自然发生兴趣。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">人间草木</div>
+                            <div class="article-excerpt">如果你来访我，我不在，请和我门外的花坐一会儿，它们很温暖，我注视它们很多很多日子了。</div>
+                            <div class="article-quote">一定要爱着点什么，恰似草木对光阴的钟情。</div>
+                        </div>
+                    </div>
+                    <img src="img1.png" alt="山间草木" class="chapter-img" onclick="openLightbox(this.src)">
+                </div>
+            </article>
+
+            <!-- 四方食事 -->
+            <article class="chapter">
+                <div class="chapter-header">
+                    <span class="chapter-num">叁</span>
+                    <div class="chapter-info">
+                        <h3>四方食事</h3>
+                        <p>吃是本能，会吃是学问</p>
+                    </div>
+                </div>
+                <div class="chapter-layout">
+                    <img src="img3.png" alt="花鸟虫鱼" class="chapter-img" onclick="openLightbox(this.src)">
+                    <div class="articles">
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">五味</div>
+                            <div class="article-excerpt">山西人真能吃醋！几个山西人在北京下饭馆，坐定之后，还没有点菜，先把醋瓶子拿过来，每人喝了三调羹醋。</div>
+                            <div class="article-quote">口味单调一点、耳音差一点，也还不要紧，最要紧的是对生活的兴趣要广一点。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">豆腐</div>
+                            <div class="article-excerpt">豆腐点得比较老的，为北豆腐。听说张家口地区有一个堡里的豆腐能用秤钩钩起来，扛着秤杆走几十里路。这是豆腐么？</div>
+                            <div class="article-quote">豆腐最简便的吃法，是拌。小葱拌豆腐，一青二白。再就是炸，炸得两面金黄，蘸花椒盐吃。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">肉食者不鄙</div>
+                            <div class="article-excerpt">狮子头是淮安菜。猪肉肥瘦各半，爱吃肥的亦可肥七瘦三，要「细切粗斩」，如石榴米大小。</div>
+                            <div class="article-quote">我不大爱吃羊肉，但对「手把肉」情有独钟。在呼伦贝尔草原，看牧民杀羊，真是快当极了。</div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 联大记忆 -->
+            <article class="chapter">
+                <div class="chapter-header">
+                    <span class="chapter-num">肆</span>
+                    <div class="chapter-info">
+                        <h3>联大记忆</h3>
+                        <p>那些难忘的人，那些闪光的日子</p>
+                    </div>
+                </div>
+                <div class="chapter-layout">
+                    <div class="articles">
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">沈从文先生在西南联大</div>
+                            <div class="article-excerpt">沈先生教写作，写的比说的多。他常常在学生的作业后面写很长的读后感，有时比原作还长。这些读后感有时评析文本，有时也抒发感慨。</div>
+                            <div class="article-quote">沈先生对于写作，有他自己的主张。他以为好的语言，是与内容贴切的，是恰当的。他不大赞成「雕琢」，认为那是「涂脂抹粉」。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">金岳霖先生</div>
+                            <div class="article-excerpt">金先生的样子有点怪。他常年戴着一顶呢帽，进教室也不脱下。每一学年开始，给新的一班学生上课，他的第一句话总是：「我的眼睛有毛病，不能摘帽子，并不是对你们不尊重，请原谅。」</div>
+                            <div class="article-quote">金先生是个单身汉，无儿无女，但是过得自得其乐。他养了一只很大的斗鸡。这鸡能把脖子伸上来，和金先生一个桌子吃饭。</div>
+                        </div>
+                        <div class="article-card" onclick="toggleCard(this)">
+                            <div class="article-title">跑警报</div>
+                            <div class="article-excerpt">西南联大有一位历史系的教授，听说是雷海宗先生，他开的一门课因为讲授多年，已经背得很熟，上课前无需准备。</div>
+                            <div class="article-quote">人生几何，恋爱三角。见机而作，入土为安。</div>
+                        </div>
+                    </div>
+                    <img src="img6.png" alt="秋意浓" class="chapter-img" onclick="openLightbox(this.src)">
+                </div>
+            </article>
+        </section>
+
+        <div class="scroll-divider"><span>心得</span></div>
+
+        <!-- 阅读心得 -->
+        <section class="insights-section" id="insights">
+            <h2 class="section-title">阅读心得</h2>
+            <div class="insights-grid">
+                <div class="insight-card" onclick="this.classList.toggle('expanded')">
+                    <span class="insight-icon">&#127807;</span>
+                    <h4 class="insight-title">发现日常之美</h4>
+                    <p class="insight-text">汪曾祺教会我们，生活中不缺少美，缺少的是发现美的眼睛。一碟咸鸭蛋、一棵葡萄、一只蝴蝶，在他笔下都能成为津津乐道的对象。</p>
+                    <div class="insight-detail">读《人间草木》，我开始留意窗台的绿植、街角的野花、菜市场的时令蔬果。原来生活的诗意不在远方，就在眼前的烟火日常之中。</div>
+                </div>
+                <div class="insight-card" onclick="this.classList.toggle('expanded')">
+                    <span class="insight-icon">&#127812;</span>
+                    <h4 class="insight-title">平淡是真</h4>
+                    <p class="insight-text">他的文字如清茶一杯，看似平淡，却越品越有味。这种「淡」，是一种历经繁华后的返璞归真，是「绚烂之极，归于平淡」的境界。</p>
+                    <div class="insight-detail">在快节奏的今天，汪曾祺的散文像是一剂清凉散。他让我明白，真正的好文章不需要华丽的辞藻，真情实感最动人，平淡自然最高级。</div>
+                </div>
+                <div class="insight-card" onclick="this.classList.toggle('expanded')">
+                    <span class="insight-icon">&#127811;</span>
+                    <h4 class="insight-title">烟火气里见性情</h4>
+                    <p class="insight-text">汪曾祺写吃、写喝、写草木虫鱼，字里行间都是对生活的热爱。这种热爱，不是轰轰烈烈，而是渗透在每一个平凡的日子里。</p>
+                    <div class="insight-detail">「一定要爱着点什么，恰似草木对光阴的钟情。」这句话成了我的座右铭。对世界保持好奇，对生活保持热情，便是最好的人生态度。</div>
+                </div>
+            </div>
+        </section>
+
+        <div class="scroll-divider"><span>画境</span></div>
+
+        <!-- 水墨画廊 -->
+        <section class="gallery-section" id="gallery">
+            <h2 class="section-title">水墨意境</h2>
+            <div class="gallery">
+                <div class="gallery-item" onclick="openLightbox('img1.png')">
+                    <img src="img1.png" alt="山间草木">
+                    <div class="gallery-caption">山野草木，生机盎然</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('img2.png')">
+                    <img src="img2.png" alt="文人书斋">
+                    <div class="gallery-caption">书斋茶韵，静思天地</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('img3.png')">
+                    <img src="img3.png" alt="藤蔓小鸟">
+                    <div class="gallery-caption">藤蔓缠绵，鸟语关关</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('img4.png')">
+                    <img src="img4.png" alt="江南水乡">
+                    <div class="gallery-caption">江南水乡，烟雨朦胧</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('img5.png')">
+                    <img src="img5.png" alt="朝颜花篱">
+                    <div class="gallery-caption">朝颜带露，篱落青青</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('img6.png')">
+                    <img src="img6.png" alt="秋实图">
+                    <div class="gallery-caption">秋实累累，岁月安然</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 互动翻书 -->
+        <section class="book-section">
+            <h2 class="section-title">书中三味</h2>
+            <p>轻触书卷，感受文字的温度</p>
+            <div class="book-wrap">
+                <div class="book-item">
+                    <div class="book-spine"></div>
+                    <div class="book-front">
+                        <h4>一果一蔬</h4>
+                        <small>食之味</small>
+                    </div>
+                </div>
+                <div class="book-item">
+                    <div class="book-spine"></div>
+                    <div class="book-front">
+                        <h4>草木虫鱼</h4>
+                        <small>物之趣</small>
+                    </div>
+                </div>
+                <div class="book-item">
+                    <div class="book-spine"></div>
+                    <div class="book-front">
+                        <h4>四方食事</h4>
+                        <small>地之风</small>
+                    </div>
+                </div>
+                <div class="book-item">
+                    <div class="book-spine"></div>
+                    <div class="book-front">
+                        <h4>联大记忆</h4>
+                        <small>人之情</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="footer-ink"></div>
+            <p class="footer-quote">到了一个新地方，有人爱逛百货公司，有人爱逛书店，<br>我宁可去逛逛菜市。看看生鸡活鸭、新鲜水灵的瓜菜、彤红的辣椒，<br>热热闹闹，挨挨挤挤，让人感到一种生之乐趣。</p>
+            <p class="footer-author">—— 汪曾祺《人间草木》</p>
+        </footer>
+    </div>
+
+    <script>
+        // 加载完成
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 1500);
+        });
+
+        // 导航显隐
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('visible', window.scrollY > window.innerHeight * 0.6);
+        });
+
+        // 卡片展开
+        function toggleCard(card) {
+            card.classList.toggle('active');
+        }
+
+        // 灯箱
+        function openLightbox(src) {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
+        // 滚动显现
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.chapter').forEach(el => observer.observe(el));
+
+        // 水墨粒子效果
+        const canvas = document.getElementById('ink-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouseX = -1000, mouseY = -1000;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        document.addEventListener('mousemove', e => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            if (Math.random() > 0.85) {
+                particles.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    life: 1,
+                    size: Math.random() * 4 + 2,
+                    color: `rgba(40,30,20,${Math.random() * 0.15 + 0.05})`
+                });
+            }
+        });
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.008;
+                p.size *= 0.995;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color.replace(/[\d.]+\)$/, p.life * 0.3 + ')');
+                ctx.fill();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
